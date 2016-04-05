@@ -1,0 +1,6 @@
+*.log
+node_modules
+lib
+config/*
+!config/*.example
+test
