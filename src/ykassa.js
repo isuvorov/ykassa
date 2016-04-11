@@ -39,6 +39,11 @@ export default class Ykassa {
     return builder.buildObject(params);
   }
 
+  getJson(xml) {
+    const builder = new xml2js.Builder();
+    return builder.buildObject(params);
+  }
+
   getRequestParams(rawParams = {}) {
     const date = new Date()
     let params = _.clone(rawParams);
@@ -102,7 +107,12 @@ export default class Ykassa {
     const performedDatetime = new Date().toISOString();
     console.log("buildResponse", action, params)
 
-    const {code, shopId, invoiceId, message} = params;
+    const {
+      code,
+      shopId,
+      invoiceId,
+      message
+    } = params;
     return this.getXml({
       [`${action}Response`]: {
         '$': {
@@ -140,7 +150,7 @@ export default class Ykassa {
     var execSync = require('child_process').execSync;
     fs.writeFileSync(`${file}.pem`, pem)
 
-// ../kassa/strategystroy/strategy_demo/depositresponsegenerator.cer
+    // ../kassa/strategystroy/strategy_demo/depositresponsegenerator.cer
     var command = `openssl smime -verify \
     -in ${file}.pem \
     -inform PEM \
@@ -218,7 +228,7 @@ export default class Ykassa {
 
   }
 
-  testDeposition(rawParams, next) {
+  testDepositionXml(rawParams, next) {
     const params = this.getRequestParams(rawParams)
 
     let root = {
@@ -235,7 +245,14 @@ export default class Ykassa {
     this.doRequest("testDeposition", xml, next)
   }
 
-  makeDeposition(rawParams, next) {
+  testDeposition(rawParams, next) {
+    this.testDepositionXml(rawParams, (err, xml) => {
+      if (err) return next(err)
+      this.parseJsonFromXml(xml, next)
+    })
+  }
+
+  makeDepositionXml(rawParams, next) {
     const params = this.getRequestParams(rawParams)
 
     let root = {
@@ -252,7 +269,16 @@ export default class Ykassa {
     this.doRequest("makeDeposition", xml, next)
   }
 
-  balance(rawParams, next) {
+  makeDeposition(rawParams, next) {
+    this.makeDepositionXml(rawParams, (err, xml) => {
+      if (err) return next(err)
+      this.parseJsonFromXml(xml, next)
+    })
+  }
+
+
+
+  balanceXml(rawParams, next) {
     if (typeof rawParams == "function") {
       next = rawParams;
       rawParams = {};
@@ -265,4 +291,23 @@ export default class Ykassa {
     });
     this.doRequest("balance", xml, next)
   }
+  balance(rawParams, next) {
+    this.balanceXml(rawParams, (err, xml) => {
+      if (err) return next(err)
+      this.parseJsonFromXml(xml, next)
+    })
+  }
+
+  parseJsonFromXml(xml, next) {
+    xml2js.parseString(xml, (err, json) => {
+      if (err) return next(err)
+      const keys = Object.keys(json);
+      try {
+        next(null, json[keys[0]]['$'])
+      } catch (err) {
+        next(err)
+      }
+    })
+  }
+
 }
