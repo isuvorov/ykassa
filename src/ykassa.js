@@ -4,7 +4,6 @@ import forge from "node-forge"
 import request from "request"
 import md5 from "md5"
 
-
 function findContent(content) {
   if (_.isString(content)) {
     return content
@@ -31,7 +30,7 @@ export default class Ykassa {
 
       cardServer: "paymentcard.yamoney.ru",
     }
-    this.params = _.assignInWith({}, params, this.defaultParams);
+    this.params = _.assignInWith({}, this.defaultParams, params);
   }
 
   getXml(params) {
@@ -105,8 +104,6 @@ export default class Ykassa {
   //
   buildResponse(action, params) {
     const performedDatetime = new Date().toISOString();
-    console.log("buildResponse", action, params)
-
     const {
       code,
       shopId,
@@ -188,6 +185,8 @@ export default class Ykassa {
   doRequest(method, xml, next) {
     const url = "https://" + this.params.server + "/webservice/deposition/api/" + method
     const pack = this.encryptPack(xml);
+    console.log(xml);
+    console.log(pack);
     request.post({
       url: url,
       headers: {
@@ -198,6 +197,15 @@ export default class Ykassa {
       body: pack
     }, function(err, response, body) {
       if (err) return next(err)
+      // console.log('body!!!!', body)
+      if (body.substr(0, '<!DOCTYPE'.length) === '<!DOCTYPE') {
+        var errMessage = body.match( /<h1>(.*?)<\/h1>/i );
+        if (errMessage && errMessage[1]){
+          return next(new Error(errMessage[1]))
+        } else {
+          return next(new Error('doRequest error'))
+        }
+      }
       const xml2 = this.decryptPack(body)
       next(null, xml2)
     }.bind(this));
