@@ -1,6 +1,6 @@
 {
   "name": "ykassa",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Yandex Kassa wrapper for NodeJS",
   "main": "index.js",
   "scripts": {

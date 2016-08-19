@@ -183,6 +183,9 @@ export default class Ykassa {
   }
 
   doRequest(method, xml, next) {
+    // if (!next) {
+    //   next = params
+    // }
     const url = "https://" + this.params.server + "/webservice/deposition/api/" + method
     const pack = this.encryptPack(xml);
     console.log(xml);
@@ -194,7 +197,8 @@ export default class Ykassa {
         'Content-Type': this.params.mime,
       },
       agentOptions: this.params.ssl,
-      body: pack
+      body: pack,
+      timeout: 5000
     }, function(err, response, body) {
       if (err) return next(err)
       // console.log('body!!!!', body)
